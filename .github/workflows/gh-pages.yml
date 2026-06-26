@@ -61,6 +61,12 @@ jobs:
           find "$DEST" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
           cp -R src-repo/src/. "$DEST/"
 
+      - name: Create values.js
+        shell: bash
+        run: |
+          DEST="gh-pages/${{ steps.facts.outputs.branchName }}"
+          echo "export const GitHubValues = { \"githubCommitSha\": \"${{ steps.facts.outputs.githubCommitSha }}\", \"userCommitSha\": \"${{ steps.facts.outputs.userCommitSha }}\" }" > "$DEST/values.js"
+
       - name: Commit and push changes
         shell: bash
         working-directory: gh-pages
