@@ -46,7 +46,7 @@ jobs:
           BRANCH_NAME=${TRIMMED_BRANCH_NAME//\//-}
 
           echo "branchName=${BRANCH_NAME}" >> $GITHUB_OUTPUT
-          echo "buildNumber=$(( $BUILD_NUMBER + $BUILD_NUMBER_OFFSET ))" >> $GITHUB_OUTPUT
+          echo "buildNumber=${BUILD_NUMBER}" >> $GITHUB_OUTPUT
           echo "githubCommitSha=${GITHUB_COMMIT_SHA}" >> $GITHUB_OUTPUT
           echo "userCommitSha=${USER_COMMIT_SHA}" >> $GITHUB_OUTPUT
 
@@ -80,7 +80,14 @@ jobs:
         shell: bash
         run: |
           DEST="gh-pages/${{ steps.facts.outputs.branchName }}"
-          echo "export const GitHubValues = { \"githubCommitSha\": \"${{ steps.facts.outputs.githubCommitSha }}\", \"userCommitSha\": \"${{ steps.facts.outputs.userCommitSha }}\" }" > "$DEST/values.js"
+          cat > "$DEST/values.js" <<EOF
+            export const GitHubValues = {
+              "githubCommitSha": "${{ steps.facts.outputs.githubCommitSha }}",
+              "userCommitSha": "${{ steps.facts.outputs.userCommitSha }}",
+              "buildNumber": "${{ steps.facts.outputs.buildNumber }}",
+              "branchName": "${{ steps.facts.outputs.branchName }}"
+            };
+          EOF
 
       # Update the gh-pages branch with our changes
       - name: Commit and push changes
