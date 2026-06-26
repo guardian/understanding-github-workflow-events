@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write # Allow writing a PR comment
 
 jobs:
   deploy:
@@ -85,3 +86,53 @@ jobs:
       - name: Print branch URL
         run: |
           echo "Branch page: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/${{ steps.facts.outputs.branchName }}/"
+
+      - name: Comment on PR
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/github-script@v9
+        env:
+          BRANCH_NAME: ${{ steps.facts.outputs.branchName }}
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = context.issue.number;
+
+            const branchUrl = `https://${owner}.github.io/${repo}/${process.env.BRANCH_NAME}/`;
+
+            const marker = '<!-- gh-pages-preview-comment -->';
+
+            const body = [
+              marker,
+              `🚀 View this branch here - ${branchUrl}`,
+              'NOTE: Requires the [pages-build-deployment](https://github.com/guardian/understanding-github-workflow-events/actions/workflows/pages/pages-build-deployment) action to have completed'
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number,
+              per_page: 100
+            });
+
+            const existing = comments.find(
+              c => c.user?.type === 'Bot' && c.body?.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body
+              });
+              core.info(`Updated existing preview comment: ${existing.id}`);
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body
+              });
+              core.info('Created new preview comment');
+            }
