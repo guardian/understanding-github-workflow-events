@@ -1,0 +1,81 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches-ignore:
+      - gh-pages
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-slim
+
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v6
+        with:
+          path: src-repo
+
+      - name: Checkout gh-pages
+        uses: actions/checkout@v6
+        with:
+          ref: gh-pages
+          path: gh-pages
+          fetch-depth: 0
+
+      - name: Build facts
+        id: facts
+        shell: bash
+        env:
+          RAW_BRANCH_NAME: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref || 'unknown' }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          GITHUB_COMMIT_SHA: ${{ github.sha }}
+          USER_COMMIT_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          # Remove "refs/heads/" prefix
+          TRIMMED_BRANCH_NAME="${RAW_BRANCH_NAME#refs/heads/}"
+
+          # Replace '/' with '-' for ECR compatibility
+          BRANCH_NAME=${TRIMMED_BRANCH_NAME//\//-}
+
+          echo "branchName=${BRANCH_NAME}" >> $GITHUB_OUTPUT
+          echo "buildNumber=$(( $BUILD_NUMBER + $BUILD_NUMBER_OFFSET ))" >> $GITHUB_OUTPUT
+          echo "githubCommitSha=${GITHUB_COMMIT_SHA}" >> $GITHUB_OUTPUT
+          echo "userCommitSha=${USER_COMMIT_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Sync src -> gh-pages/<branch>
+        shell: bash
+        run: |
+          DEST="gh-pages/${{ steps.facts.outputs.branchName }}"
+          mkdir -p "$DEST"
+
+          # Replace only this branch folder with current src snapshot.
+          find "$DEST" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+          cp -R src-repo/src/. "$DEST/"
+
+      - name: Commit and push changes
+        shell: bash
+        working-directory: gh-pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add "${{ steps.facts.outputs.branchName }}"
+          if git diff --cached --quiet; then
+            echo "No changes to publish."
+          else
+            git commit -m "Deploy ${GITHUB_REF_NAME} to Pages"
+            git push "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages
+          fi
+
+      - name: Print branch URL
+        run: |
+          echo "Branch page: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/${{ steps.facts.outputs.branchName }}/"
