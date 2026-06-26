@@ -5,7 +5,7 @@ body {
   flex-direction: column;
   justify-content:center;
   align-items:center;
-  background-color: #ffffff;
+  background: linear-gradient(135deg, #d8ffa8 0%, #f7b2d9 50%, #ffddb6 100%);
 }
 
 h1 {
