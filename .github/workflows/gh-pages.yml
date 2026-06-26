@@ -19,18 +19,6 @@ jobs:
     runs-on: ubuntu-slim
 
     steps:
-      - name: Checkout source branch
-        uses: actions/checkout@v6
-        with:
-          path: src-repo
-
-      - name: Checkout gh-pages
-        uses: actions/checkout@v6
-        with:
-          ref: gh-pages
-          path: gh-pages
-          fetch-depth: 0
-
       - name: Build facts
         id: facts
         shell: bash
@@ -50,6 +38,19 @@ jobs:
           echo "buildNumber=$(( $BUILD_NUMBER + $BUILD_NUMBER_OFFSET ))" >> $GITHUB_OUTPUT
           echo "githubCommitSha=${GITHUB_COMMIT_SHA}" >> $GITHUB_OUTPUT
           echo "userCommitSha=${USER_COMMIT_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Checkout source branch
+        uses: actions/checkout@v6
+        with:
+          path: src-repo
+          ref: ${{ steps.facts.outputs.branchName }}
+
+      - name: Checkout gh-pages
+        uses: actions/checkout@v6
+        with:
+          ref: gh-pages
+          path: gh-pages
+          fetch-depth: 0
 
       - name: Sync src -> gh-pages/<branch>
         shell: bash
