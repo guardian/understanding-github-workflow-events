@@ -1,14 +1,21 @@
+# This workflow updates the `gh-pages` branch which powers the GitHub Pages site https://guardian.github.io/understanding-github-workflow-events/.
+# It creates a new directory in the `gh-pages` branch for each branch, and copies the contents of `src/` into that directory.
+# This results in a preview of the branch being available at https://guardian.github.io/understanding-github-workflow-events/<branch-name>.
+# NOTE: The site will only be available once https://github.com/guardian/understanding-github-workflow-events/actions/workflows/pages/pages-build-deployment has completed.
+
 name: Deploy to GitHub Pages
 
+# Run this workflow when...
 on:
+  # ...pushing to main, i.e. on PR merge
   push:
     branches:
       - main
 
+  # ...OR when raising a PR
   pull_request:
-    branches-ignore:
-      - gh-pages
 
+  # ...OR when manually triggered
   workflow_dispatch:
 
 permissions:
@@ -20,12 +27,15 @@ jobs:
     runs-on: ubuntu-slim
 
     steps:
+      # Establish some facts about this build
       - name: Build facts
         id: facts
         shell: bash
         env:
           RAW_BRANCH_NAME: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref || 'unknown' }}
           BUILD_NUMBER: ${{ github.run_number }}
+
+          # See https://github.com/orgs/community/discussions/26325
           GITHUB_COMMIT_SHA: ${{ github.sha }}
           USER_COMMIT_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
         run: |
@@ -40,11 +50,13 @@ jobs:
           echo "githubCommitSha=${GITHUB_COMMIT_SHA}" >> $GITHUB_OUTPUT
           echo "userCommitSha=${USER_COMMIT_SHA}" >> $GITHUB_OUTPUT
 
+      # Checkout our changes
       - name: Checkout source branch
         uses: actions/checkout@v6
         with:
           path: src-repo
 
+      # Checkout the gh-pages branch (which powers https://guardian.github.io/understanding-github-workflow-events/)
       - name: Checkout gh-pages
         uses: actions/checkout@v6
         with:
@@ -52,6 +64,7 @@ jobs:
           path: gh-pages
           fetch-depth: 0
 
+      # Add our changes to the gh-pages branch, in a folder named after our branch
       - name: Sync src -> gh-pages/<branch>
         shell: bash
         run: |
@@ -62,12 +75,14 @@ jobs:
           find "$DEST" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
           cp -R src-repo/src/. "$DEST/"
 
+      # Recreate values.js with the current commit SHAs, so that the deployed site can display them
       - name: Create values.js
         shell: bash
         run: |
           DEST="gh-pages/${{ steps.facts.outputs.branchName }}"
           echo "export const GitHubValues = { \"githubCommitSha\": \"${{ steps.facts.outputs.githubCommitSha }}\", \"userCommitSha\": \"${{ steps.facts.outputs.userCommitSha }}\" }" > "$DEST/values.js"
 
+      # Update the gh-pages branch with our changes
       - name: Commit and push changes
         shell: bash
         working-directory: gh-pages
@@ -83,10 +98,12 @@ jobs:
             git push "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages
           fi
 
+      # Print the URL of the branch page
       - name: Print branch URL
         run: |
           echo "Branch page: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/${{ steps.facts.outputs.branchName }}/"
 
+      # If triggered by a PR, add a comment with links to the branch page
       - name: Comment on PR
         if: ${{ github.event_name == 'pull_request' }}
         uses: actions/github-script@v9
