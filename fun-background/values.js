@@ -1,1 +1,1 @@
-export const GitHubValues = { "githubCommitSha": "e149b469a1ed7aa8cd840c85819b7c68d9e06443", "userCommitSha": "b75e4a32c593ddce2e51532a554b186a0473e78c" }
+export const GitHubValues = { "githubCommitSha": "7cc9bf699ad48088631a285a4636b35c2b453e56", "userCommitSha": "fdeb40fd34f26f331063e99c225d0694f672a373" }
