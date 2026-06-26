@@ -12,6 +12,7 @@ See also https://github.com/orgs/community/discussions/26325.
 4. Merge PR B to `main`.
 5. Add a new commit to PR A. Do not rebase against `main`.
 6. Preview the deployed site for PR A in the browser again and observe the changes from PR B being included (even though they're not in the revision history for the branch 😱).
+7. Manually trigger the [gh-pages.yml](.github/workflows/gh-pages.yml) and observe the changes from PR B are not included in the deployed site for PR A 😵‍💫.
 
 ## Running locally
 Start a web server to serve the [`src`](./src) directory:
