@@ -14,7 +14,7 @@ See also https://github.com/orgs/community/discussions/26325.
 
 ## Well that's strange behaviour? How can I fix this?
 ### Set `ref` to the name of your branch
-In your build when checking out the code with `actions/checkout`, set `ref` to the name of your branch.
+In your build, when checking out the code with [`actions/checkout`](https://github.com/actions/checkout), set `ref` to the name of your branch or the [HEAD commit on the branch](https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit).
 Now the build artifact will be created exactly from your branch. Nothing more. Nothing less.
 
 ### Use a different trigger
