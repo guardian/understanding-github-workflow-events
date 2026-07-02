@@ -20,6 +20,9 @@ Now the build artifact will be created exactly from your branch. Nothing more. N
 ### Use a different trigger
 Switch to a [`push` trigger](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request), which does not have this "merged with main" behaviour.
 
+## Do I _need_ to fix this?
+Not necessarily. If you're happy with the behaviour of the `pull_request` trigger (or haven't noticed such behaviour previously), then you can likely leave it as is.
+
 ## Running locally
 Start a web server to serve the [`src`](./src) directory:
 
